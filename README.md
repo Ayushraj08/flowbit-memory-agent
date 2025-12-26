@@ -1,108 +1,122 @@
-🧠 Flowbit Memory Agent
+# 🧠 Flowbit Memory Agent  
+**Learned Memory Layer for Invoice Automation**
 
-Learned Memory Layer for Invoice Automation
+---
 
-📌 Overview
+## 📌 Overview
 
-This project implements a memory-driven AI agent layer for invoice automation systems.
-Instead of treating every invoice as a new, isolated document, the system learns from past human corrections and vendor-specific behavior and applies those learnings to future invoices.
+**Flowbit Memory Agent** implements a **memory-driven AI agent layer** for invoice automation systems.
 
-Scope clarification
-As per the assignment, invoice extraction is assumed to be complete.
-This project focuses strictly on learning, memory, decision logic, confidence evolution, and explainability — not OCR or ML model training.
+Instead of treating every invoice as a new, isolated document, the system **learns from past human corrections and vendor-specific behavior** and applies those learnings to future invoices.
 
-🎯 Problem Statement
+> **Scope clarification:**  
+> As per the assignment, **invoice extraction is assumed to be complete**.  
+> This project focuses strictly on **learning, memory, decision logic, confidence evolution, and explainability** — **not OCR or ML model training**.
+
+---
+
+## 🎯 Problem Statement
 
 In real-world invoice processing:
 
-Vendors follow recurring formats and conventions
+- Vendors follow recurring formats and conventions  
+- Human corrections repeat across invoices  
+- Traditional systems do **not retain or reuse** this knowledge  
 
-Human corrections repeat across invoices
+### As a result:
 
-Traditional systems do not retain or reuse this knowledge
+- The same issues are flagged repeatedly  
+- Automation rates stagnate  
+- Human effort is wasted on known patterns  
 
-As a result:
+---
 
-The same issues are flagged repeatedly
+## ✅ Solution Summary
 
-Automation rates stagnate
+This project introduces a **Learned Memory Layer** that sits **on top of invoice extraction** and enables the system to:
 
-Human effort is wasted on known patterns
+- Recall relevant past learnings  
+- Apply vendor- and pattern-specific corrections  
+- Decide whether to **auto-apply**, **suggest**, or **escalate**  
+- Learn continuously from human resolutions  
+- Remain **fully explainable and auditable**  
 
-✅ Solution Summary
+---
 
-This project introduces a Learned Memory Layer that sits on top of invoice extraction and enables the system to:
+## 🧱 System Architecture (Phase 0–6)
+```
+┌─────────────────────┐
+│ Extracted Invoice │
+└─────────┬───────────┘
+↓
+┌─────────────────────┐
+│ Recall Memory │
+└─────────┬───────────┘
+↓
+┌─────────────────────┐
+│ Apply Memory │
+└─────────┬───────────┘
+↓
+┌─────────────────────┐
+│ Decision Engine │
+└─────────┬───────────┘
+↓
+┌─────────────────────┐
+│ Learn & Persist │
+└─────────┬───────────┘
+↓
+┌──────────────────────────────────┐
+│ Explainable Output + Audit Trail │
+└──────────────────────────────────┘
+```
 
-Recall relevant past learnings
+All logic runs in **Node.js** using **TypeScript (strict mode)** with **persistent memory storage (SQLite)**.
 
-Apply vendor- and pattern-specific corrections
+---
 
-Decide whether to auto-apply, suggest, or escalate
+## 🧠 Memory Types Implemented
 
-Learn from human resolutions
+### 1️⃣ Vendor Memory
 
-Remain fully explainable and auditable
+Stores **vendor-specific patterns**, including:
 
-The system improves incrementally and safely over time.
+- Label mappings  
+  *(e.g. `Leistungsdatum` → `serviceDate`)*  
+- VAT inclusion behavior  
+- Currency conventions  
+- Description → SKU mappings  
+  *(e.g. `Seefracht` → `FREIGHT`)*  
 
-🧱 System Architecture (Phase 0–6)
-Extracted Invoice
-      ↓
-[ Recall Memory ]
-      ↓
-[ Apply Memory ]
-      ↓
-[ Decision Engine ]
-      ↓
-[ Learn & Persist ]
-      ↓
-Explainable Output + Audit Trail
+**Purpose:**  
+Enable **consistent normalization** for future invoices from the same vendor.
 
+---
 
-All logic runs in Node.js using TypeScript (strict mode) with persistent memory storage (SQLite).
+### 2️⃣ Correction Memory
 
-🧠 Memory Types Implemented
-1️⃣ Vendor Memory
+Learns from **repeated human corrections**, such as:
 
-Stores vendor-specific patterns such as:
+- VAT recalculation from gross totals  
+- Quantity mismatches resolved via delivery notes  
+- Correct PO selection when multiple candidates exist  
 
-Label mappings
-(e.g. “Leistungsdatum” → serviceDate)
+**Purpose:**  
+Reduce **repeated manual corrections** across similar invoices.
 
-VAT inclusion behavior
+---
 
-Currency conventions
-
-Description → SKU mappings (e.g. Seefracht → FREIGHT)
-
-Purpose:
-Enable consistent normalization for future invoices from the same vendor.
-
-2️⃣ Correction Memory
-
-Learns from repeated human corrections such as:
-
-VAT recalculation from gross totals
-
-Quantity mismatches resolved via delivery notes
-
-Correct PO selection when multiple candidates exist
-
-Purpose:
-Reduce repeated manual corrections across similar invoices.
-
-3️⃣ Resolution Memory
+### 3️⃣ Resolution Memory
 
 Tracks how discrepancies were resolved:
 
-Approved
+- Approved  
+- Rejected  
+- Overridden  
 
-Rejected
+**Purpose:**  
+Prevent incorrect patterns from dominating and **reinforce only successful learnings**.
 
-Overridden
-
-Purpose:
-Prevent incorrect patterns from dominating and reinforce only successful learnings.
+---
 
 🔁 Core Processing Loop
 
