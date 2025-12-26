@@ -44,6 +44,7 @@ This project introduces a **Learned Memory Layer** that sits **on top of invoice
 ---
 
 ## 🧱 System Architecture
+```
 ┌─────────────────────┐
 │ Extracted Invoice │
 └─────────┬───────────┘
@@ -67,7 +68,7 @@ This project introduces a **Learned Memory Layer** that sits **on top of invoice
 ┌──────────────────────────────────┐
 │ Explainable Output + Audit Trail │
 └──────────────────────────────────┘
-
+```
 All logic runs in **Node.js** using **TypeScript (strict mode)** with **persistent memory storage (SQLite)**.
 
 ---
@@ -116,105 +117,98 @@ Prevent incorrect patterns from dominating and **reinforce only successful learn
 
 ---
 
-🔁 Core Processing Loop
+## 🔁 Core Processing Loop
 
-Each invoice passes through a deterministic pipeline:
+Each invoice passes through a **deterministic processing pipeline**:
 
-1️⃣ Recall
+---
 
-Retrieves vendor & correction memory
+### 1️⃣ Recall
 
-Matches purchase orders and delivery notes
+- Retrieves **vendor** and **correction memory**
+- Matches purchase orders and delivery notes
+- Detects possible duplicates
+- Extracts relevant raw-text signals
 
-Detects possible duplicates
+---
 
-Extracts raw-text signals
+### 2️⃣ Apply
 
-2️⃣ Apply
+- Suggests field normalizations
+- Proposes corrective actions
+- Adjusts confidence based on historical success
 
-Suggests field normalizations
+---
 
-Proposes corrections
+### 3️⃣ Decide
 
-Adjusts confidence using historical success
+Actions are selected based on **confidence thresholds**:
 
-3️⃣ Decide
+- **Auto-apply** → High confidence  
+- **Suggest** → Medium confidence  
+- **Escalate for human review** → Low confidence or detected duplicates  
 
-Based on confidence thresholds:
+---
 
-Auto-apply (high confidence)
-
-Suggest (medium confidence)
-
-Escalate for human review (low confidence or duplicates)
-
-4️⃣ Learn
+### 4️⃣ Learn
 
 After human input:
 
-Reinforces successful memory
+- Reinforces successful memory patterns
+- Decays or weakens failed patterns
+- Records all changes in the audit trail
 
-Decays or weakens failed patterns
+---
 
-Records changes in the audit trail
+## 📊 Confidence Model
 
-📊 Confidence Model
+Confidence is tracked as a **numeric score between `0.0` and `1.0`**.
 
-Confidence is tracked as a numeric score (0.0 – 1.0).
+### Reinforced when:
+- Human approves a suggested correction
+- Vendor-specific patterns repeat successfully
 
-Reinforced when:
+### Decayed when:
+- A suggested correction is rejected
+- Conflicting evidence appears
 
-Human approves a suggested correction
+---
 
-Vendor pattern repeats successfully
+### ✅ Design Guarantees
 
-Decayed when:
+- No single incorrect learning can dominate the system
+- Confidence evolves **gradually and safely**
+- Trust is built over time through validated outcomes
 
-Suggested correction is rejected
+---
 
-Conflicting evidence appears
+## 🔍 Explainability & Audit Trail
 
-This ensures:
+Every invoice produces a fully explainable output. The system provides transparency into the "thought process" behind every action, including:
 
-No single bad learning dominates
+* **Memory Recall:** What historical data was retrieved.
+* **Correction Logic:** Why a specific correction was suggested.
+* **Decision Rationale:** Why a final action was taken.
+* **Confidence Shift:** How confidence levels evolved during processing.
+* **Knowledge Acquisition:** What new memory was stored for future use.
 
-Trust builds gradually and safely over time
+### Audit Log Schema
+Each step is logged using a standardized JSON structure:
 
-🧾 Explainability & Audit Trail
-
-Every invoice produces a fully explainable output, including:
-
-What memory was recalled
-
-Why a correction was suggested
-
-Why a decision was made
-
-How confidence changed
-
-What new memory was stored
-
-Each step is logged as:
-
+```json
 {
   "step": "recall | apply | decide | learn",
-  "timestamp": "...",
-  "details": "..."
+  "timestamp": "ISO-8601-String",
+  "details": "Descriptive text of the internal logic"
 }
+```
+> This ensures the system remains Auditable, Debuggable, and Enterprise-ready.
 
-
-This makes the system:
-
-Auditable
-
-Debuggable
-
-Enterprise-ready
-
-📤 Output Contract (Guaranteed)
+## 📤 Output Contract (Guaranteed)
 
 For every invoice, the system outputs:
 
+```json
 {
   "normalizedInvoice": { "...": "..." },
   "proposedCorrections": [ "..." ],
@@ -224,101 +218,95 @@ For every invoice, the system outputs:
   "memoryUpdates": [ "..." ],
   "auditTrail": [ ... ]
 }
+```
+> This contract is strictly followed in all demo runs.
 
+## 🧪 Demonstration of Learning (Key Requirement)
 
-This contract is strictly followed in all demo runs.
+The demo explicitly shows **learning over time**:
 
-🧪 Demonstration of Learning (Key Requirement)
+### Invoice #1
+- Issues detected  
+- Human correction applied  
+- Memory stored  
+- Conservative decision (human review)
 
-The demo explicitly shows learning over time:
+### Invoice #2 (same vendor / pattern)
+- Memory recalled  
+- Fewer flags  
+- Smarter suggestions  
+- Higher confidence  
+- Reduced need for human review  
 
-Invoice #1
+✅ This directly satisfies the **most important requirement of the assignment**.
 
-Issues detected
+---
 
-Human correction applied
+## 🛠 Tech Stack
 
-Memory stored
+- **Language:** TypeScript (strict mode)  
+- **Runtime:** Node.js  
+- **Persistence:** SQLite (memory persists across runs)  
+- **Approach:** Heuristic-based (no ML training)  
+- **Focus:** Learning, explainability, correctness  
 
-Conservative decision (human review)
+---
 
-Invoice #2 (same vendor/pattern)
+## 📌 Design Principles
 
-Memory recalled
+- Deterministic & explainable (no black-box ML)  
+- Memory-first decision making  
+- Human-in-the-loop by default  
+- Confidence reinforcement + decay  
+- Safe automation over aggressive auto-application  
 
-Fewer flags
+---
 
-Smarter suggestions
+## 📝 Notes on UI / Frontend
 
-Higher confidence
-
-Reduced need for human review
-
-This directly satisfies the most important requirement of the assignment.
-
-🛠 Tech Stack
-
-Language: TypeScript (strict mode)
-
-Runtime: Node.js
-
-Persistence: SQLite (memory persists across runs)
-
-Approach: Heuristic-based (no ML training)
-
-Focus: Learning, explainability, correctness
-
-📌 Design Principles
-
-Deterministic & explainable (no black-box ML)
-
-Memory-first decision making
-
-Human-in-the-loop by default
-
-Confidence reinforcement + decay
-
-Safe automation over aggressive auto-application
-
-📝 Notes on UI / Frontend
-
-UI and visualization are not required for this assignment and are treated as optional enhancements.
+UI and visualization are **not required** for this assignment and are treated as **optional enhancements**.
 
 The core system is fully functional and demonstrable using:
 
-CLI execution
+- CLI execution  
+- JSON outputs  
+- Logged audit trails  
 
-JSON outputs
+---
 
-Logged audit trails
+## 📎 How to Run the Demo
 
-📎 How to Run the Demo
+```bash
 npm install
 npm run demo
-
-
-The demo processes invoices sequentially and prints outputs showing learned behavior.
-
-🎬 Demo Video
+```
+## 🎬 Demo Video
 
 The submission includes a demo video showing:
 
-Initial invoice processing
+- Initial invoice processing  
+- Human correction application  
+- Memory persistence  
+- Improved behavior on subsequent invoices  
 
-Human correction application
+---
 
-Memory persistence
+## ✅ Conclusion
 
-Improved behavior on subsequent invoices
+This project demonstrates how a **memory-driven AI agent** can significantly improve invoice automation by:
 
-✅ Conclusion
+- Learning from real-world corrections  
+- Adapting to vendor-specific behavior  
+- Remaining explainable and auditable  
+- Increasing automation confidence over time  
 
-This project demonstrates how a memory-driven AI agent can significantly improve invoice automation by:
+---
+## 👨‍💻 Author
 
-Learning from real-world corrections
+**Ayush Raj**  
+AI Systems • Automation • Agent Design  
 
-Adapting to vendor-specific behavior
+📧 **Email:** rajaayushwow0@gmail.com  
+🔗 **LinkedIn:** https://www.linkedin.com/in/ayussh-raj
 
-Remaining explainable and auditable
-
-Increasing automation confidence over time
+---
